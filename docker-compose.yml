@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database Container
+  database:
+    image: postgres:16-alpine
+    container_name: edgezen_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: edgezen_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./src/supabase_schema.sql:/docker-entrypoint-initdb.d/01_init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d edgezen_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # EDGEZEN Web Platform Container
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: edgezen_web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-}
+    depends_on:
+      database:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
