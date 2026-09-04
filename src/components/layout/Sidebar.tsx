@@ -4,22 +4,18 @@ import { useAuth } from '../../context/AuthContext';
 import {
   LayoutDashboard,
   Trophy,
-  Award,
-  BookOpen,
   Calendar,
+  CheckCircle2,
   Sparkles,
-  QrCode,
   Flame,
   ShieldAlert,
   Users,
-  Lightbulb,
   FileText,
   Mail,
   Sliders,
   History,
-  TrendingUp,
   CreditCard,
-  MessageSquare
+  UsersRound,
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -43,18 +39,6 @@ export const Sidebar: React.FC = () => {
             >
               <LayoutDashboard className="w-4 h-4 text-cyan-400" />
               <span>EDGEZEN Hub</span>
-            </NavLink>
-
-            <NavLink
-              to="/student/progress"
-              className={({ isActive }) =>
-                `flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                  isActive ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold shadow-glow' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-                }`
-              }
-            >
-              <TrendingUp className="w-4 h-4 text-cyan-400" />
-              <span>My Progress & Analytics</span>
             </NavLink>
 
             <NavLink
@@ -82,30 +66,6 @@ export const Sidebar: React.FC = () => {
             </NavLink>
 
             <NavLink
-              to="/resources"
-              className={({ isActive }) =>
-                `flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                  isActive ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold shadow-glow' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-                }`
-              }
-            >
-              <BookOpen className="w-4 h-4 text-blue-400" />
-              <span>Resource Library</span>
-            </NavLink>
-
-            <NavLink
-              to="/certificates"
-              className={({ isActive }) =>
-                `flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                  isActive ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold shadow-glow' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-                }`
-              }
-            >
-              <Award className="w-4 h-4 text-emerald-400" />
-              <span>Certificate Vault</span>
-            </NavLink>
-
-            <NavLink
               to="/calendar"
               className={({ isActive }) =>
                 `flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
@@ -115,6 +75,30 @@ export const Sidebar: React.FC = () => {
             >
               <Calendar className="w-4 h-4 text-purple-400" />
               <span>Club Calendar</span>
+            </NavLink>
+
+            <NavLink
+              to="/student/hub#upcoming-events"
+              className="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-900/60"
+            >
+              <Calendar className="w-4 h-4 text-emerald-400" />
+              <span>Upcoming Events</span>
+            </NavLink>
+
+            <NavLink
+              to="/student/hub#completed-events"
+              className="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all text-slate-400 hover:text-slate-200 hover:bg-slate-900/60"
+            >
+              <CheckCircle2 className="w-4 h-4 text-slate-400" />
+              <span>Completed Events</span>
+            </NavLink>
+
+            <NavLink
+              to="/student/hub#behind-the-stage"
+              className="flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all text-cyan-300 hover:text-slate-200 hover:bg-slate-900/60"
+            >
+              <UsersRound className="w-4 h-4 text-cyan-400" />
+              <span>Behind the Stage</span>
             </NavLink>
 
             <NavLink
@@ -129,29 +113,6 @@ export const Sidebar: React.FC = () => {
               <span>Hall of Fame & Wall</span>
             </NavLink>
 
-            <NavLink
-              to="/ideas"
-              className={({ isActive }) =>
-                `flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                  isActive ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold shadow-glow' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-                }`
-              }
-            >
-              <Lightbulb className="w-4 h-4 text-yellow-400" />
-              <span>Idea Submission</span>
-            </NavLink>
-
-            <NavLink
-              to="/discussions"
-              className={({ isActive }) =>
-                `flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                  isActive ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-semibold shadow-glow' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-                }`
-              }
-            >
-              <MessageSquare className="w-4 h-4 text-indigo-400" />
-              <span>Discussion Forums</span>
-            </NavLink>
           </nav>
         </div>
 
@@ -215,30 +176,6 @@ export const Sidebar: React.FC = () => {
                   <span>Member Directory</span>
                 </NavLink>
               )}
-
-              <NavLink
-                to="/admin/events"
-                className={({ isActive }) =>
-                  `flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                    isActive ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-                  }`
-                }
-              >
-                <Calendar className="w-4 h-4 text-emerald-400" />
-                <span>Event Ops & Pass</span>
-              </NavLink>
-
-              <NavLink
-                to="/qr-scanner"
-                className={({ isActive }) =>
-                  `flex items-center space-x-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
-                    isActive ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
-                  }`
-                }
-              >
-                <QrCode className="w-4 h-4 text-purple-400" />
-                <span>QR Attendance Scanner</span>
-              </NavLink>
 
               <NavLink
                 to="/admin/contests"

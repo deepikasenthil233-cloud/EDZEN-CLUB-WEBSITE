@@ -1,14 +1,10 @@
 import React from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { CreditCard, Download, Printer, ShieldCheck, Sparkles } from 'lucide-react';
+import { CreditCard, ShieldCheck, Sparkles } from 'lucide-react';
 
 export const DigitalMembershipCard: React.FC = () => {
   const { currentUser } = useAuth();
   if (!currentUser) return null;
-
-  const handlePrint = () => {
-    window.print();
-  };
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
@@ -21,22 +17,6 @@ export const DigitalMembershipCard: React.FC = () => {
           <p className="text-xs text-slate-400">Official verified digital pass for club access and event check-in.</p>
         </div>
 
-        <div className="flex items-center space-x-2 no-print">
-          <button
-            onClick={handlePrint}
-            className="flex items-center space-x-2 bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-slate-200 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
-          >
-            <Printer className="w-4 h-4 text-cyan-400" />
-            <span>Print Pass</span>
-          </button>
-          <button
-            onClick={handlePrint}
-            className="flex items-center space-x-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-glow transition-all"
-          >
-            <Download className="w-4 h-4" />
-            <span>Download PDF Card</span>
-          </button>
-        </div>
       </div>
 
       {/* Card Visual Container */}

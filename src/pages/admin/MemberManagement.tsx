@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
-import { Users, Search, UserPlus, Upload, Shield, ShieldAlert, Award, UserCheck, Check, X, FileSpreadsheet } from 'lucide-react';
+import { Users, Search, UserPlus, Upload, Camera, Trash2, Shield, ShieldAlert, Award, UserCheck, Check, X, FileSpreadsheet } from 'lucide-react';
 import { UserProfile, UserRole } from '../../types';
 
 export const MemberManagement: React.FC = () => {
-  const { allUsers, addUser, updateUserRole, updateUserStatus } = useAuth();
+  const { allUsers, addUser, updateUserAvatar, deleteUser, updateUserRole, updateUserStatus } = useAuth();
   const { addAuditLog } = useData();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,6 +20,7 @@ export const MemberManagement: React.FC = () => {
   const [newDept, setNewDept] = useState('AI & Data Science');
   const [newYear, setNewYear] = useState('III Year');
   const [newRole, setNewRole] = useState<UserRole>('student_member');
+  const [newAvatarUrl, setNewAvatarUrl] = useState<string>();
 
   // Bulk CSV file upload raw text state
   const [csvText, setCsvText] = useState('');
@@ -33,6 +34,30 @@ export const MemberManagement: React.FC = () => {
     return matchesSearch && matchesRole;
   });
 
+  const handleMemberImageChange = (event: React.ChangeEvent<HTMLInputElement>, userId: string) => {
+    const imageFile = event.target.files?.[0];
+    if (!imageFile || !imageFile.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') updateUserAvatar(userId, reader.result);
+    };
+    reader.readAsDataURL(imageFile);
+    event.target.value = '';
+  };
+
+  const handleNewMemberImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const imageFile = event.target.files?.[0];
+    if (!imageFile || !imageFile.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') setNewAvatarUrl(reader.result);
+    };
+    reader.readAsDataURL(imageFile);
+    event.target.value = '';
+  };
+
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFullName || !newEmail || !newRegNo) return;
@@ -44,10 +69,10 @@ export const MemberManagement: React.FC = () => {
       department: newDept,
       year: newYear,
       college_email: newEmail,
-      member_id: `EDGEZEN${new Date().getFullYear()}${Math.floor(100 + Math.random() * 900)}`,
+      member_id: `EDZEN_${newFullName.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`,
       role: newRole,
       status: 'active',
-      avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+      avatar_url: newAvatarUrl,
       bio: 'Newly recruited EDGEZEN member.',
       skills: ['Python', 'AI Basics'],
       xp: 0,
@@ -63,6 +88,7 @@ export const MemberManagement: React.FC = () => {
     setNewFullName('');
     setNewRegNo('');
     setNewEmail('');
+    setNewAvatarUrl(undefined);
   };
 
   const handleBulkImport = () => {
@@ -82,7 +108,7 @@ export const MemberManagement: React.FC = () => {
           department: dept || 'AI & Data Science',
           year: year || 'III Year',
           college_email: email || `student${idx}@college.edu`,
-          member_id: `EDGEZEN2026${String(idx + 100).padStart(3, '0')}`,
+          member_id: `EDZEN_${(name || `Student ${idx}`).toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`,
           role: 'student_member',
           status: 'active',
           avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
@@ -168,7 +194,6 @@ export const MemberManagement: React.FC = () => {
                 <th className="p-3.5">Dept & Year</th>
                 <th className="p-3.5">Role</th>
                 <th className="p-3.5">Status</th>
-                <th className="p-3.5">XP & Level</th>
                 <th className="p-3.5 text-right">Actions</th>
               </tr>
             </thead>
@@ -176,9 +201,36 @@ export const MemberManagement: React.FC = () => {
               {filteredUsers.map(u => (
                 <tr key={u.id} className="hover:bg-slate-900/40 transition-colors">
                   <td className="p-3.5 flex items-center space-x-3">
-                    <img src={u.avatar_url} alt={u.full_name} className="w-8 h-8 rounded-lg object-cover ring-1 ring-slate-700" />
+                    <div className="relative shrink-0">
+                      {u.avatar_url ? (
+                        <img src={u.avatar_url} alt={u.full_name} className="w-8 h-8 rounded-lg object-cover ring-1 ring-slate-700" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/40 flex items-center justify-center text-[10px] font-bold">
+                          {u.full_name.slice(0, 2).toUpperCase()}
+                        </div>
+                      )}
+                      <label className="absolute -right-2 -bottom-2 w-5 h-5 rounded-full bg-cyan-600 text-white flex items-center justify-center cursor-pointer border border-slate-950" title="Change member image">
+                        <Camera className="w-3 h-3" />
+                        <input type="file" accept="image/*" onChange={e => handleMemberImageChange(e, u.id)} className="hidden" />
+                      </label>
+                    </div>
                     <div>
-                      <div className="font-bold text-slate-200">{u.full_name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-bold text-slate-200">{u.full_name}</div>
+                        {u.id !== 'super-admin-deepika' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (window.confirm(`Delete ${u.full_name} from the member directory?`)) deleteUser(u.id);
+                            }}
+                            className="p-1 text-slate-500 hover:text-rose-400 transition-colors"
+                            title="Delete member"
+                            aria-label={`Delete ${u.full_name}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                       <div className="text-[10px] text-slate-400">{u.college_email}</div>
                     </div>
                   </td>
@@ -214,12 +266,10 @@ export const MemberManagement: React.FC = () => {
                       {u.status}
                     </button>
                   </td>
-                  <td className="p-3.5 font-mono text-slate-300">
-                    <span className="text-cyan-400 font-bold">Lvl {u.level}</span>
-                    <span className="text-slate-500 block text-[10px]">{u.xp} XP</span>
-                  </td>
                   <td className="p-3.5 text-right font-mono text-[11px]">
-                    <span className="text-slate-500">Joined {u.joined_date}</span>
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="text-slate-500">Joined {u.joined_date}</span>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -276,6 +326,23 @@ export const MemberManagement: React.FC = () => {
                 />
               </div>
 
+              <div>
+                <label className="text-slate-400 block mb-1 font-semibold">Profile Image</label>
+                <div className="flex items-center gap-3 rounded-xl border border-dashed border-slate-700 bg-slate-900 p-3">
+                  {newAvatarUrl ? (
+                    <img src={newAvatarUrl} alt="New member preview" className="w-12 h-12 rounded-xl object-cover ring-1 ring-cyan-500/40" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-slate-500">
+                      <Upload className="w-5 h-5" />
+                    </div>
+                  )}
+                  <label className="cursor-pointer text-cyan-400 hover:text-cyan-300 font-semibold">
+                    <span>{newAvatarUrl ? 'Choose a different image' : 'Upload from local computer'}</span>
+                    <input type="file" accept="image/*" onChange={handleNewMemberImageChange} className="hidden" />
+                  </label>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-slate-400 block mb-1 font-semibold">Department</label>
@@ -305,6 +372,10 @@ export const MemberManagement: React.FC = () => {
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono"
                 >
                   <option value="student_member">Student Member</option>
+
+              <p className="rounded-xl border border-cyan-500/20 bg-cyan-950/20 p-3 text-[11px] text-cyan-300 font-mono">
+                New member login: USERNAME: EDZEN_NAME | PASSWORD: ERP NUMBER
+              </p>
                   <option value="student_coordinator">Student Coordinator</option>
                   <option value="faculty_coordinator">Faculty Coordinator</option>
                   <option value="super_admin">Super Admin</option>

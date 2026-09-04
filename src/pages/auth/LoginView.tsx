@@ -18,7 +18,7 @@ export const LoginView: React.FC = () => {
     if (success) {
       navigate('/student/hub');
     } else {
-      setErrorMsg('Invalid College Email or Member ID. Registration is private invitation-only.');
+      setErrorMsg('Invalid username or password.');
     }
   };
 
@@ -61,7 +61,7 @@ export const LoginView: React.FC = () => {
 
           <form onSubmit={handleFormLogin} className="space-y-4 text-xs">
             <div>
-              <label className="text-slate-300 block mb-1.5 font-semibold">College Email or Member ID *</label>
+              <label className="text-slate-300 block mb-1.5 font-semibold">Username *</label>
               <div className="relative">
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <input
@@ -69,7 +69,7 @@ export const LoginView: React.FC = () => {
                   required
                   value={emailOrId}
                   onChange={e => setEmailOrId(e.target.value)}
-                  placeholder="e.g. deepika@college.edu or EDGEZEN2026001"
+                  placeholder="EDZEN_YOURNAME"
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-cyan-500"
                 />
               </div>
@@ -84,11 +84,15 @@ export const LoginView: React.FC = () => {
                   required
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
+                  placeholder="8208E........"
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
             </div>
+
+            <p className="text-[11px] text-cyan-300 bg-cyan-950/20 border border-cyan-500/20 rounded-xl p-3 font-mono">
+              Member login: USERNAME: EDZEN_YOURNAME | PASSWORD: ERP NUMBER
+            </p>
 
             <button
               type="submit"

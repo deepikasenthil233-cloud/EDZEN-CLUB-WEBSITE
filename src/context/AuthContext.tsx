@@ -10,11 +10,48 @@ interface AuthContextType {
   updateProfile: (updated: Partial<UserProfile>) => void;
   allUsers: UserProfile[];
   addUser: (user: UserProfile) => void;
+  updateUserAvatar: (userId: string, avatarUrl: string) => void;
+  deleteUser: (userId: string) => void;
   updateUserRole: (userId: string, newRole: UserRole) => void;
   updateUserStatus: (userId: string, status: UserProfile['status']) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const SUPER_ADMIN_ID = 'super-admin-deepika';
+const SUPER_ADMIN_USERNAME = 'admin_deepika';
+const SUPER_ADMIN_PASSWORD = 'deepika_2006';
+const LEGACY_SUPER_ADMIN_AVATAR = 'photo-1507003211169';
+
+const createSuperAdminProfile = (): UserProfile => ({
+  id: SUPER_ADMIN_ID,
+  full_name: 'Deepika',
+  register_number: 'ADMIN-001',
+  department: 'Administration',
+  year: 'System Admin',
+  college_email: 'admin_deepika@edgezen.local',
+  member_id: SUPER_ADMIN_USERNAME,
+  role: 'super_admin',
+  status: 'active',
+  bio: 'Platform Super Admin',
+  skills: ['System Administration'],
+  xp: 0,
+  level: 1,
+  streak_weeks: 0,
+  profile_completion_pct: 100,
+  joined_date: new Date().toISOString().split('T')[0],
+  notification_preferences: { email: true, in_app: true, contests: true, events: true }
+});
+
+const normalizeSuperAdmin = (user: UserProfile): UserProfile => ({
+  ...user,
+  member_id: SUPER_ADMIN_USERNAME,
+  role: 'super_admin',
+  avatar_url: user.avatar_url?.includes(LEGACY_SUPER_ADMIN_AVATAR) ? undefined : user.avatar_url
+});
+
+const getMemberUsername = (fullName: string): string =>
+  `EDZEN_${fullName.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_')}`;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<UserProfile[]>(() => {
@@ -30,7 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
     const savedId = localStorage.getItem('edgezen_active_user_id');
     const found = users.find(u => u.id === savedId);
-    return found || (users.length > 0 ? users[0] : null); // Default to first user or null if empty
+    if (!found || found.status !== 'active') return null;
+    return found.id === SUPER_ADMIN_ID ? normalizeSuperAdmin(found) : found;
   });
 
   useEffect(() => {
@@ -43,43 +81,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [currentUser]);
 
-  const login = (emailOrMemberId: string, _pass: string): boolean => {
-    if (users.length === 0) {
-      // Create first user as Super Admin
-      const firstUser: UserProfile = {
-        id: `user-${Date.now()}`,
-        full_name: emailOrMemberId.split('@')[0],
-        register_number: 'ADMIN-001',
-        department: 'Administration',
-        year: 'System Admin',
-        college_email: emailOrMemberId.includes('@') ? emailOrMemberId : `${emailOrMemberId}@college.edu`,
-        member_id: emailOrMemberId,
-        role: 'super_admin',
-        status: 'active',
-        avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
-        bio: 'First User - Platform Super Admin',
-        skills: ['System Administration'],
-        xp: 0,
-        level: 1,
-        streak_weeks: 0,
-        profile_completion_pct: 100,
-        joined_date: new Date().toISOString().split('T')[0],
-        notification_preferences: { email: true, in_app: true, contests: true, events: true }
-      };
-      setUsers([firstUser]);
-      setCurrentUser(firstUser);
+  const login = (emailOrMemberId: string, pass: string): boolean => {
+    if (emailOrMemberId === SUPER_ADMIN_USERNAME && pass === SUPER_ADMIN_PASSWORD) {
+      const existingSuperAdmin = users.find(user => user.id === SUPER_ADMIN_ID);
+      const superAdmin = existingSuperAdmin
+        ? normalizeSuperAdmin(existingSuperAdmin)
+        : createSuperAdminProfile();
+      setUsers(prev => existingSuperAdmin
+        ? prev.map(user => user.id === SUPER_ADMIN_ID ? superAdmin : user)
+        : [superAdmin, ...prev]);
+      setCurrentUser(superAdmin);
       return true;
     }
 
-    const found = users.find(
-      u => u.college_email.toLowerCase() === emailOrMemberId.toLowerCase() ||
-           u.member_id.toLowerCase() === emailOrMemberId.toLowerCase()
+    const found = users.find(user =>
+      user.id !== SUPER_ADMIN_ID &&
+      (user.member_id.toLowerCase() === emailOrMemberId.trim().toLowerCase() ||
+        getMemberUsername(user.full_name).toLowerCase() === emailOrMemberId.trim().toLowerCase()) &&
+      user.register_number.trim().toLowerCase() === pass.trim().toLowerCase()
     );
-    if (found) {
-      setCurrentUser(found);
+    if (!found) {
+      const normalizedUsername = emailOrMemberId.trim().toUpperCase();
+      if (!normalizedUsername.startsWith('EDZEN_') || normalizedUsername.length <= 6 || !pass.trim()) {
+        return false;
+      }
+
+      const fullName = normalizedUsername.slice(6).replace(/_/g, ' ').trim();
+      const newMember: UserProfile = {
+        id: `user-${Date.now()}`,
+        full_name: fullName,
+        register_number: pass.trim(),
+        department: 'Not specified',
+        year: 'Not specified',
+        college_email: `${fullName.toLowerCase().replace(/\s+/g, '.')}@college.edu`,
+        member_id: normalizedUsername,
+        role: 'student_member',
+        status: 'active',
+        xp: 0,
+        level: 1,
+        streak_weeks: 0,
+        profile_completion_pct: 40,
+        joined_date: new Date().toISOString().split('T')[0]
+      };
+      setUsers(prev => [newMember, ...prev]);
+      setCurrentUser(newMember);
       return true;
     }
-    return false;
+
+    setCurrentUser(found);
+    return true;
   };
 
   const logout = () => {
@@ -88,6 +138,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const switchRole = (role: UserRole) => {
+    if (role === 'super_admin' && currentUser?.id !== SUPER_ADMIN_ID) {
+      return;
+    }
     const target = users.find(u => u.role === role);
     if (target) {
       setCurrentUser(target);
@@ -107,6 +160,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const addUser = (newUser: UserProfile) => {
     setUsers(prev => [newUser, ...prev]);
+  };
+
+  const updateUserAvatar = (userId: string, avatarUrl: string) => {
+    setUsers(prev => prev.map(user => user.id === userId ? { ...user, avatar_url: avatarUrl } : user));
+    if (currentUser?.id === userId) {
+      setCurrentUser(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
+    }
+  };
+
+  const deleteUser = (userId: string) => {
+    if (userId === SUPER_ADMIN_ID) return;
+    setUsers(prev => prev.filter(user => user.id !== userId));
+    if (currentUser?.id === userId) {
+      setCurrentUser(null);
+      localStorage.removeItem('edgezen_active_user_id');
+    }
   };
 
   const updateUserRole = (userId: string, newRole: UserRole) => {
@@ -129,6 +198,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateProfile,
       allUsers: users,
       addUser,
+      updateUserAvatar,
+      deleteUser,
       updateUserRole,
       updateUserStatus
     }}>

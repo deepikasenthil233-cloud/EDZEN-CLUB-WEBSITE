@@ -1,10 +1,51 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
-import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import { EventItem } from '../../types';
 
 export const ClubCalendarView: React.FC = () => {
-  const { events, contests } = useData();
+  const { events, contests, addEvent } = useData();
+  const { currentUser } = useAuth();
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [eventDate, setEventDate] = useState('');
+  const [eventTime, setEventTime] = useState('10:00 AM - 04:00 PM');
+  const [venue, setVenue] = useState('');
+
+  const handleCreateEvent = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!currentUser || !title || !description || !eventDate || !venue) return;
+
+    const newEvent: EventItem = {
+      id: `event-${Date.now()}`,
+      title,
+      description,
+      category: 'Workshop',
+      event_date: eventDate,
+      event_time: eventTime,
+      venue,
+      max_participants: 120,
+      registration_deadline: `${eventDate}T23:59:59Z`,
+      organizer_id: currentUser.id,
+      organizer_name: currentUser.full_name,
+      poster_url: '',
+      status: 'upcoming',
+      xp_reward: 15,
+      registered_count: 0,
+      created_at: new Date().toISOString().split('T')[0],
+      qr_code_secret: `PASS-${Date.now()}`
+    };
+
+    addEvent(newEvent);
+    setShowAddModal(false);
+    setTitle('');
+    setDescription('');
+    setEventDate('');
+    setVenue('');
+  };
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
@@ -30,6 +71,15 @@ export const ClubCalendarView: React.FC = () => {
             </button>
           ))}
         </div>
+        {currentUser?.id === 'super-admin-deepika' && (
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-glow"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add Club Event</span>
+          </button>
+        )}
       </div>
 
       <div className="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
@@ -75,6 +125,33 @@ export const ClubCalendarView: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <form onSubmit={handleCreateEvent} className="glass-panel rounded-3xl p-6 max-w-md w-full border border-emerald-500/40 space-y-4 shadow-glass">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-extrabold text-base text-white">Add Club Event</h3>
+              <button type="button" onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <input required value={title} onChange={e => setTitle(e.target.value)} placeholder="Event title" className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white" />
+              <textarea required value={description} onChange={e => setDescription(e.target.value)} placeholder="Event description" className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white" />
+              <div className="grid grid-cols-2 gap-2">
+                <input required type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white" />
+                <input required value={eventTime} onChange={e => setEventTime(e.target.value)} placeholder="10:00 AM - 04:00 PM" className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white" />
+              </div>
+              <input required value={venue} onChange={e => setVenue(e.target.value)} placeholder="Venue" className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white" />
+            </div>
+
+            <button type="submit" className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold py-3 rounded-xl text-xs shadow-glow">
+              Add Event to Calendar
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

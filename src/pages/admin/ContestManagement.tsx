@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import { useData } from '../../context/DataContext';
-import { Trophy, Plus, Sparkles, HelpCircle, FileText, Check, X } from 'lucide-react';
+import { Trophy, Plus, X } from 'lucide-react';
 import { ContestItem, QuestionItem } from '../../types';
+
+interface ManualQuestion {
+  questionText: string;
+  options: string[];
+  correctAnswer: string;
+  marks: number;
+}
 
 export const ContestManagement: React.FC = () => {
   const { contests, questions, addContest } = useData();
@@ -12,26 +19,18 @@ export const ContestManagement: React.FC = () => {
   const [category, setCategory] = useState<ContestItem['category']>('Artificial Intelligence');
   const [durationMinutes, setDurationMinutes] = useState(30);
 
-  // AI Assistant Question Generator State (#163)
-  const [aiTopic, setAiTopic] = useState('Deep Learning Loss Functions');
-  const [generatedDraft, setGeneratedDraft] = useState<QuestionItem | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [manualQuestions, setManualQuestions] = useState<ManualQuestion[]>([
+    { questionText: '', options: ['', '', '', ''], correctAnswer: '', marks: 100 }
+  ]);
 
-  const handleGenerateAiQuestion = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setGeneratedDraft({
-        id: `q-ai-${Date.now()}`,
-        contest_id: 'draft',
-        question_text: `Which loss function is specifically designed to address class imbalance in deep learning object detection models?`,
-        question_type: 'mcq',
-        options: ['Cross-Entropy Loss', 'Focal Loss', 'Mean Squared Error', 'Hinge Loss'],
-        correct_answer: 'Focal Loss',
-        marks: 25,
-        explanation: 'Focal Loss down-weights easy examples during training to focus model capacity on hard negative samples.'
-      });
-      setIsGenerating(false);
-    }, 600);
+  const updateQuestion = (questionIndex: number, changes: Partial<ManualQuestion>) => {
+    setManualQuestions(prev => prev.map((question, index) => index === questionIndex ? { ...question, ...changes } : question));
+  };
+
+  const updateQuestionOption = (questionIndex: number, optionIndex: number, value: string) => {
+    setManualQuestions(prev => prev.map((question, index) => index === questionIndex
+      ? { ...question, options: question.options.map((option, index) => index === optionIndex ? value : option) }
+      : question));
   };
 
   const handleCreateContest = (e: React.FormEvent) => {
@@ -45,36 +44,34 @@ export const ContestManagement: React.FC = () => {
       category,
       difficulty: 'Intermediate',
       duration_minutes: durationMinutes,
-      total_marks: 100,
-      passing_marks: 50,
+      total_marks: manualQuestions.reduce((total, question) => total + question.marks, 0),
+      passing_marks: Math.ceil(manualQuestions.reduce((total, question) => total + question.marks, 0) / 2),
       xp_reward: 25,
       winner_xp_bonus: 100,
       start_time: new Date().toISOString(),
       end_time: new Date(Date.now() + 7 * 86400000).toISOString(),
       poster_url: 'https://images.unsplash.com/photo-1677442136019-21780efad99a?auto=format&fit=crop&q=80&w=800',
       status: 'live',
-      instructions: ['30 minutes timer', 'Auto-save active'],
+      instructions: [`${durationMinutes} minutes timer`, 'Auto-save active'],
       allowed_attempts: 1,
       created_at: new Date().toISOString().split('T')[0]
     };
 
-    const qList: QuestionItem[] = generatedDraft ? [generatedDraft] : [
-      {
-        id: `q-${Date.now()}`,
-        contest_id: newContest.id,
-        question_text: 'What is the primary advantage of Self-Attention over Recurrent Neural Networks?',
-        question_type: 'mcq',
-        options: ['Parallelizable Computation', 'Fewer Parameters', 'Zero Memory Overhead', 'No Hyperparameters'],
-        correct_answer: 'Parallelizable Computation',
-        marks: 50
-      }
-    ];
+    const qList: QuestionItem[] = manualQuestions.map((question, index) => ({
+      id: `q-${Date.now()}-${index}`,
+      contest_id: newContest.id,
+      question_text: question.questionText,
+      question_type: 'mcq',
+      options: question.options,
+      correct_answer: question.correctAnswer,
+      marks: question.marks
+    }));
 
     addContest(newContest, qList);
     setShowAddModal(false);
     setTitle('');
     setDescription('');
-    setGeneratedDraft(null);
+    setManualQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: '', marks: 100 }]);
   };
 
   return (
@@ -121,14 +118,14 @@ export const ContestManagement: React.FC = () => {
         })}
       </div>
 
-      {/* Create Contest & AI Question Modal */}
+      {/* Create Contest & Manual Question Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <form onSubmit={handleCreateContest} className="glass-panel rounded-3xl p-6 max-w-lg w-full border border-amber-500/40 space-y-4 shadow-glass max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center space-x-2">
                 <Trophy className="w-5 h-5 text-amber-400" />
-                <h3 className="font-extrabold text-base text-white">Create Contest & AI Questions</h3>
+                <h3 className="font-extrabold text-base text-white">Create Contest & Add Question</h3>
               </div>
               <button type="button" onClick={() => setShowAddModal(false)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
@@ -159,30 +156,61 @@ export const ContestManagement: React.FC = () => {
                 />
               </div>
 
-              {/* AI Contest Question Assistant (#163) */}
-              <div className="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-cyan-300 flex items-center space-x-1.5">
-                    <Sparkles className="w-4 h-4 text-cyan-400" />
-                    <span>EDGEZEN AI Question Draft Generator</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleGenerateAiQuestion}
-                    className="bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 px-3 py-1 rounded-xl font-mono text-[11px]"
-                  >
-                    {isGenerating ? 'Generating...' : 'Generate AI MCQ'}
-                  </button>
-                </div>
-
-                {generatedDraft && (
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1 font-mono text-[11px]">
-                    <div className="text-cyan-400 font-bold">Draft Question: {generatedDraft.question_text}</div>
-                    <div className="text-slate-300">Answer: {generatedDraft.correct_answer}</div>
-                    <div className="text-slate-400 text-[10px]">{generatedDraft.explanation}</div>
-                  </div>
-                )}
+              <div>
+                <label className="text-slate-400 block mb-1 font-semibold">Contest Timer (minutes) *</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  max="240"
+                  value={durationMinutes}
+                  onChange={e => setDurationMinutes(Number(e.target.value))}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white font-mono"
+                />
+                <p className="text-[10px] text-slate-500 mt-1">Participants will have this much time to complete the contest.</p>
               </div>
+
+              {manualQuestions.map((question, questionIndex) => (
+                <div key={questionIndex} className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-200">Manual MCQ {questionIndex + 1}</span>
+                    {manualQuestions.length > 1 && (
+                      <button type="button" onClick={() => setManualQuestions(prev => prev.filter((_, index) => index !== questionIndex))} className="text-rose-400 hover:text-rose-300 text-[11px] font-semibold">Remove</button>
+                    )}
+                  </div>
+                  <textarea
+                    required
+                    value={question.questionText}
+                    onChange={e => updateQuestion(questionIndex, { questionText: e.target.value })}
+                    placeholder="Enter the question"
+                    className="w-full h-20 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
+                  />
+                  {question.options.map((option, optionIndex) => (
+                    <input
+                      key={optionIndex}
+                      required
+                      value={option}
+                      onChange={e => updateQuestionOption(questionIndex, optionIndex, e.target.value)}
+                      placeholder={`Option ${optionIndex + 1}`}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white"
+                    />
+                  ))}
+                  <div className="grid grid-cols-2 gap-2">
+                    <select required value={question.correctAnswer} onChange={e => updateQuestion(questionIndex, { correctAnswer: e.target.value })} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white">
+                      <option value="">Correct answer</option>
+                      {question.options.filter(option => option.trim()).map(option => <option key={option} value={option}>{option}</option>)}
+                    </select>
+                    <input required type="number" min="1" value={question.marks} onChange={e => updateQuestion(questionIndex, { marks: Number(e.target.value) })} placeholder="Marks" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white" />
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => setManualQuestions(prev => [...prev, { questionText: '', options: ['', '', '', ''], correctAnswer: '', marks: 100 }])}
+                className="w-full border border-dashed border-amber-500/40 text-amber-300 hover:bg-amber-500/10 py-2.5 rounded-xl text-xs font-bold"
+              >
+                + Add Another Question
+              </button>
             </div>
 
             <button

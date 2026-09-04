@@ -115,6 +115,17 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => LocalStateEngine.set('audit_logs', auditLogs), [auditLogs]);
   useEffect(() => LocalStateEngine.set('activity_logs', activityLogs), [activityLogs]);
 
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setEvents(prev => {
+      const updatedEvents = prev.map(event => event.event_date < today && event.status === 'upcoming'
+        ? { ...event, status: 'completed' as const }
+        : event
+      );
+      return updatedEvents.some((event, index) => event !== prev[index]) ? updatedEvents : prev;
+    });
+  }, []);
+
   const addAuditLog = (action: string, details: string) => {
     if (!currentUser) return;
     const log: AuditLog = {

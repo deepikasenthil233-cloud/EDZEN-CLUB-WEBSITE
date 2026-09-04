@@ -19,7 +19,7 @@ interface EDGEZENAiDrawerProps {
 
 export const EDGEZENAiDrawer: React.FC<EDGEZENAiDrawerProps> = ({ isOpen, onClose }) => {
   const { currentUser } = useAuth();
-  const { events, contests, certificates, resources } = useData();
+  const { events, contests } = useData();
   const navigate = useNavigate();
 
   const [input, setInput] = useState('');
@@ -68,12 +68,8 @@ export const EDGEZENAiDrawer: React.FC<EDGEZENAiDrawerProps> = ({ isOpen, onClos
         } else {
           aiResponseText = 'There are no upcoming events listed right now.';
         }
-      } else if (lower.includes('certificate') || lower.includes('my cert')) {
-        aiResponseText = `You currently have ${certificates.length} certificates available in your vault, including your AI Hackathon Winner Certificate!`;
-        actionBtn = { label: 'Open Certificate Vault', link: '/certificates' };
       } else if (lower.includes('xp') || lower.includes('level') || lower.includes('rank')) {
         aiResponseText = `You have ${currentUser?.xp} XP and are currently Level ${currentUser?.level} (${currentUser?.streak_weeks} week participation streak). Attend events or submit weekly contests to level up!`;
-        actionBtn = { label: 'View My Progress', link: '/student/progress' };
       } else if (lower.includes('contest') || lower.includes('competition')) {
         const live = contests.find(c => c.status === 'live');
         if (live) {
@@ -82,9 +78,6 @@ export const EDGEZENAiDrawer: React.FC<EDGEZENAiDrawerProps> = ({ isOpen, onClos
         } else {
           aiResponseText = 'No contest is live at this exact moment. Check back soon!';
         }
-      } else if (lower.includes('learn') || lower.includes('recommend') || lower.includes('resource')) {
-        aiResponseText = `Based on your interest in ${currentUser?.areas_of_interest?.join(', ') || 'AI & Data Science'}, I recommend reading the Transformer Architecture Paper or completing the Prompt Engineering Contest.`;
-        actionBtn = { label: 'Explore Resources', link: '/resources' };
       } else if (lower.includes('admin') || lower.includes('registered') || lower.includes('analytics')) {
         if (currentUser?.role === 'super_admin' || currentUser?.role === 'faculty_coordinator') {
           aiResponseText = `Platform Statistics: 4 Active Members, 3 Events Conducted, 84 Event Registrations, 2 Contests Completed, 100% System Health.`;
@@ -93,7 +86,7 @@ export const EDGEZENAiDrawer: React.FC<EDGEZENAiDrawerProps> = ({ isOpen, onClos
           aiResponseText = 'Administrative insights are reserved for Super Admins and Faculty Coordinators.';
         }
       } else {
-        aiResponseText = `I understand you asked: "${query}". I am tuned specifically for EDGEZEN AI Club operations! You can ask me about events, weekly contests, XP calculations, certificates, or learning resources.`;
+        aiResponseText = `I understand you asked: "${query}". I am tuned specifically for EDGEZEN AI Club operations! You can ask me about events, weekly contests, or XP calculations.`;
       }
 
       const aiMsg: Message = {

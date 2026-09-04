@@ -11,14 +11,10 @@ import { EDGEZENAiDrawer } from './components/ai/EDGEZENAiDrawer';
 // Pages
 import { LoginView } from './pages/auth/LoginView';
 import { EDGEZENHub } from './pages/student/EDGEZENHub';
-import { MyProgress } from './pages/student/MyProgress';
 import { DigitalMembershipCard } from './pages/student/DigitalMembershipCard';
-import { ResourceLibrary } from './pages/resources/ResourceLibrary';
 import { WeeklyContestList } from './pages/contests/WeeklyContestList';
-import { CertificateVault } from './pages/certificates/CertificateVault';
 import { SuperAdminDashboard } from './pages/admin/SuperAdminDashboard';
 import { MemberManagement } from './pages/admin/MemberManagement';
-import { EventManagement } from './pages/admin/EventManagement';
 import { ContestManagement } from './pages/admin/ContestManagement';
 import { EmailBroadcastCenter } from './pages/admin/EmailBroadcastCenter';
 import { AuditLogsView } from './pages/admin/AuditLogsView';
@@ -27,9 +23,6 @@ import { FacultyDashboard } from './pages/coordinators/FacultyDashboard';
 import { StudentCoordinatorDashboard } from './pages/coordinators/StudentCoordinatorDashboard';
 import { HallOfFame } from './pages/common/HallOfFame';
 import { ClubCalendarView } from './pages/common/ClubCalendarView';
-import { IdeasPortal } from './pages/common/IdeasPortal';
-import { DiscussionForum } from './pages/common/DiscussionForum';
-import { QrScannerView } from './pages/qr/QrScannerView';
 import { Search, X } from 'lucide-react';
 
 const AppLayout: React.FC = () => {
@@ -61,25 +54,18 @@ const AppLayout: React.FC = () => {
           <Routes>
             <Route path="/" element={<Navigate to="/student/hub" replace />} />
             <Route path="/student/hub" element={<EDGEZENHub />} />
-            <Route path="/student/progress" element={<MyProgress />} />
             <Route path="/student/membership-card" element={<DigitalMembershipCard />} />
-            <Route path="/resources" element={<ResourceLibrary />} />
             <Route path="/contests" element={<WeeklyContestList />} />
-            <Route path="/certificates" element={<CertificateVault />} />
             <Route path="/calendar" element={<ClubCalendarView />} />
             <Route path="/hall-of-fame" element={<HallOfFame />} />
-            <Route path="/ideas" element={<IdeasPortal />} />
-            <Route path="/discussions" element={<DiscussionForum />} />
-            <Route path="/qr-scanner" element={<QrScannerView />} />
 
             {/* Admin Routes */}
-            <Route path="/admin/dashboard" element={<SuperAdminDashboard />} />
-            <Route path="/admin/members" element={<MemberManagement />} />
-            <Route path="/admin/events" element={<EventManagement />} />
-            <Route path="/admin/contests" element={<ContestManagement />} />
-            <Route path="/admin/emails" element={<EmailBroadcastCenter />} />
-            <Route path="/admin/audit-logs" element={<AuditLogsView />} />
-            <Route path="/admin/settings" element={<SystemSettingsView />} />
+            <Route path="/admin/dashboard" element={<SuperAdminRoute><SuperAdminDashboard /></SuperAdminRoute>} />
+            <Route path="/admin/members" element={<SuperAdminRoute><MemberManagement /></SuperAdminRoute>} />
+            <Route path="/admin/contests" element={<SuperAdminRoute><ContestManagement /></SuperAdminRoute>} />
+            <Route path="/admin/emails" element={<SuperAdminRoute><EmailBroadcastCenter /></SuperAdminRoute>} />
+            <Route path="/admin/audit-logs" element={<SuperAdminRoute><AuditLogsView /></SuperAdminRoute>} />
+            <Route path="/admin/settings" element={<SuperAdminRoute><SystemSettingsView /></SuperAdminRoute>} />
 
             {/* Coordinator Routes */}
             <Route path="/faculty/dashboard" element={<FacultyDashboard />} />
@@ -122,15 +108,22 @@ const AppLayout: React.FC = () => {
               <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-amber-300 font-mono">
                 🏆 Weekly AI Contest #42: Prompt Engineering (Live Contest)
               </div>
-              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 text-emerald-300 font-mono">
-                📜 AI Hackathon Winner Certificate (Certificate Vault)
-              </div>
             </div>
           </div>
         </div>
       )}
     </div>
   );
+};
+
+const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentUser } = useAuth();
+
+  if (currentUser?.id !== 'super-admin-deepika' || currentUser.role !== 'super_admin') {
+    return <Navigate to="/student/hub" replace />;
+  }
+
+  return <>{children}</>;
 };
 
 export const App: React.FC = () => {

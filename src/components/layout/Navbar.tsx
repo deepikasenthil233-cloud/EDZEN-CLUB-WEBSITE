@@ -11,7 +11,7 @@ import {
   LogOut, 
   User, 
   ShieldCheck, 
-  Award, 
+  Camera,
   Sparkles,
   CheckCheck,
   X
@@ -24,7 +24,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onToggleAi, onOpenSearch }) => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, updateProfile, logout } = useAuth();
   const { notifications, markAllNotificationsAsRead, markNotificationAsRead } = useData();
   const { theme, toggleTheme } = useTheme();
 
@@ -32,6 +32,20 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleAi, onOpenSearch }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const handleProfileImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const imageFile = event.target.files?.[0];
+    if (!imageFile || !imageFile.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        updateProfile({ avatar_url: reader.result });
+      }
+    };
+    reader.readAsDataURL(imageFile);
+    event.target.value = '';
+  };
 
   return (
     <nav className="glass-panel sticky top-[37px] z-40 px-4 lg:px-6 py-3 flex items-center justify-between border-b border-slate-800">
@@ -161,11 +175,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleAi, onOpenSearch }) => {
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center space-x-2 pl-2 pr-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-cyan-500/40 transition-all"
           >
-            <img
-              src={currentUser?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300'}
-              alt={currentUser?.full_name}
-              className="w-7 h-7 rounded-lg object-cover ring-1 ring-cyan-500/40"
-            />
+            {currentUser?.avatar_url ? (
+              <img
+                src={currentUser.avatar_url}
+                alt={currentUser.full_name}
+                className="w-7 h-7 rounded-lg object-cover ring-1 ring-cyan-500/40"
+              />
+            ) : (
+              <span className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-300 ring-1 ring-cyan-500/40 flex items-center justify-center text-[10px] font-bold">
+                {currentUser?.full_name.slice(0, 2).toUpperCase()}
+              </span>
+            )}
             <div className="text-left hidden lg:block">
               <div className="text-xs font-bold text-slate-200 leading-tight">{currentUser?.full_name.split(' ')[0]}</div>
               <div className="text-[10px] text-cyan-400 font-mono">Lvl {currentUser?.level} • {currentUser?.xp} XP</div>
@@ -192,14 +212,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleAi, onOpenSearch }) => {
                   <User className="w-3.5 h-3.5 text-cyan-400" />
                   <span>My EDGEZEN Hub</span>
                 </Link>
-                <Link
-                  to="/certificates"
-                  onClick={() => setShowUserMenu(false)}
-                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white"
-                >
-                  <Award className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Certificate Vault</span>
-                </Link>
+                <label className="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white cursor-pointer">
+                  <Camera className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Change Profile Image</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfileImageChange}
+                    className="hidden"
+                  />
+                </label>
 
                 {currentUser?.role === 'super_admin' && (
                   <Link

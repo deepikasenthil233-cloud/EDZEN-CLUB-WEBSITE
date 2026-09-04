@@ -37,12 +37,6 @@ export const StudentCoordinatorDashboard: React.FC = () => {
 
       <div className="flex gap-3">
         <Link
-          to="/admin/events"
-          className="flex-1 p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-emerald-500/40 text-center font-bold text-xs text-emerald-400 transition-all"
-        >
-          ➕ Create / Edit Assigned Event
-        </Link>
-        <Link
           to="/admin/contests"
           className="flex-1 p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-amber-500/40 text-center font-bold text-xs text-amber-400 transition-all"
         >

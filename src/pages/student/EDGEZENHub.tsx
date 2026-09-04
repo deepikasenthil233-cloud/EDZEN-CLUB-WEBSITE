@@ -1,34 +1,61 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useData } from '../../context/DataContext';
-import { AiRecommendationCards } from '../../components/ai/AiRecommendationCards';
 import { 
   Trophy, 
-  Award, 
-  BookOpen, 
   Calendar, 
   Flame, 
   CheckCircle2, 
   Clock, 
-  ArrowUpRight, 
   Sparkles, 
   QrCode, 
-  Zap, 
   Target, 
   ChevronRight,
-  TrendingUp,
   PartyPopper
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
+import { LocalStateEngine } from '../../services/supabase';
+
+interface StudentUpcomingEvent {
+  id: string;
+  eventName: string;
+  eventType: string;
+  date: string;
+  registrationLink: string;
+  posterUrl: string;
+}
+
+interface StudentBehindSceneEvent {
+  id: string;
+  eventName: string;
+  eventType: string;
+  description: string;
+  mode: string;
+  posterUrl: string;
+  thankYouNote: string;
+  contributors: string;
+  thankYouPosterUrl: string;
+}
 
 export const EDGEZENHub: React.FC = () => {
   const { currentUser } = useAuth();
-  const { events, contests, certificates, eventRegistrations, registerForEvent } = useData();
+  const { events, contests, eventRegistrations, registerForEvent } = useData();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [selectedPassQr, setSelectedPassQr] = useState<string | null>(null);
+  const upcomingUploadedEvents = LocalStateEngine.get<StudentUpcomingEvent[]>('upcoming_events', []);
+  const behindSceneEvents = LocalStateEngine.get<StudentBehindSceneEvent[]>('behind_scene_events', []);
+  const completedEvents = events.filter(event => event.status === 'completed');
+
+  React.useEffect(() => {
+    if (!location.hash) return;
+    const section = document.getElementById(location.hash.slice(1));
+    if (section) {
+      window.requestAnimationFrame(() => section.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+  }, [location.hash]);
 
   if (!currentUser) return null;
 
@@ -36,8 +63,6 @@ export const EDGEZENHub: React.FC = () => {
   const nextLevelXp = 100 - xpProgress;
 
   const myRegistrations = eventRegistrations.filter(r => r.student_id === currentUser.id);
-  const myCertificates = certificates.filter(c => c.student_id === currentUser.id);
-
   const upcomingEvent = events.find(e => e.status === 'upcoming');
   const liveContest = contests.find(c => c.status === 'live');
 
@@ -49,13 +74,6 @@ export const EDGEZENHub: React.FC = () => {
     ? myRegistrations.find(r => r.event_id === upcomingEvent.id)?.qr_pass_code
     : null;
 
-  const analyticsData = [
-    { month: 'Mar', XP: 120, Contests: 2, Events: 1 },
-    { month: 'Apr', XP: 210, Contests: 4, Events: 2 },
-    { month: 'May', XP: 340, Contests: 6, Events: 3 },
-    { month: 'Jun', XP: 410, Contests: 8, Events: 4 },
-    { month: 'Jul', XP: 480, Contests: 10, Events: 5 },
-  ];
 
   const triggerCelebration = () => {
     confetti({
@@ -73,17 +91,6 @@ export const EDGEZENHub: React.FC = () => {
         
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center space-x-5">
-            <div className="relative group">
-              <img
-                src={currentUser.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300'}
-                alt={currentUser.full_name}
-                className="w-20 h-20 rounded-2xl object-cover ring-2 ring-cyan-500/50 shadow-glow"
-              />
-              <span className="absolute -bottom-1 -right-1 bg-cyan-500 text-black font-mono text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shadow">
-                Lvl {currentUser.level}
-              </span>
-            </div>
-
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-2xl lg:text-3xl font-extrabold text-white font-outfit">
@@ -127,54 +134,9 @@ export const EDGEZENHub: React.FC = () => {
 
       {/* 2. Animated Dashboard Statistics Cards (Requirement #19) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
-        <div className="glass-card rounded-2xl p-4 border border-cyan-500/20">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Current Rank</span>
-            <Trophy className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="text-2xl font-extrabold text-white font-outfit">#4</div>
-          <p className="text-[10px] text-cyan-400 font-mono mt-1">Top 5% in AI Dept</p>
-        </div>
-
-        <div className="glass-card rounded-2xl p-4 border border-cyan-500/20">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Total XP</span>
-            <Zap className="w-4 h-4 text-cyan-400" />
-          </div>
-          <div className="text-2xl font-extrabold text-cyan-400 font-outfit">{currentUser.xp}</div>
-          <p className="text-[10px] text-slate-400 font-mono mt-1">+65 XP this week</p>
-        </div>
-
-        <div className="glass-card rounded-2xl p-4 border border-cyan-500/20">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Current Level</span>
-            <Sparkles className="w-4 h-4 text-purple-400" />
-          </div>
-          <div className="text-2xl font-extrabold text-purple-400 font-outfit">Lvl {currentUser.level}</div>
-          <p className="text-[10px] text-slate-400 font-mono mt-1">Master Tier</p>
-        </div>
-
-        <div className="glass-card rounded-2xl p-4 border border-cyan-500/20">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Certificates</span>
-            <Award className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="text-2xl font-extrabold text-emerald-400 font-outfit">{myCertificates.length}</div>
-          <p className="text-[10px] text-slate-400 font-mono mt-1">100% Verified</p>
-        </div>
-
-        <div className="glass-card rounded-2xl p-4 border border-cyan-500/20 col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between text-slate-400 mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider">Streak</span>
-            <Flame className="w-4 h-4 text-rose-500 animate-bounce" />
-          </div>
-          <div className="text-2xl font-extrabold text-rose-400 font-outfit">{currentUser.streak_weeks} Weeks 🔥</div>
-          <p className="text-[10px] text-slate-400 font-mono mt-1">3 weeks to Badge reward</p>
-        </div>
       </div>
 
       {/* 3. AI Personalized Recommendation Engine Cards (Requirement #52 & #162) */}
-      <AiRecommendationCards />
 
       {/* 4. Quick Actions Panel (Requirement #20) */}
       <div>
@@ -197,35 +159,11 @@ export const EDGEZENHub: React.FC = () => {
           </Link>
 
           <Link
-            to="/certificates"
-            className="glass-card rounded-xl p-3 text-center border border-slate-800 hover:border-emerald-500/40 group"
-          >
-            <Award className="w-5 h-5 text-emerald-400 mx-auto mb-1 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-semibold text-slate-200 block">Certificates</span>
-          </Link>
-
-          <Link
             to="/hall-of-fame"
             className="glass-card rounded-xl p-3 text-center border border-slate-800 hover:border-purple-500/40 group"
           >
             <Flame className="w-5 h-5 text-purple-400 mx-auto mb-1 group-hover:scale-110 transition-transform" />
             <span className="text-xs font-semibold text-slate-200 block">Leaderboard</span>
-          </Link>
-
-          <Link
-            to="/resources"
-            className="glass-card rounded-xl p-3 text-center border border-slate-800 hover:border-blue-500/40 group"
-          >
-            <BookOpen className="w-5 h-5 text-blue-400 mx-auto mb-1 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-semibold text-slate-200 block">Resources</span>
-          </Link>
-
-          <Link
-            to="/ideas"
-            className="glass-card rounded-xl p-3 text-center border border-slate-800 hover:border-yellow-500/40 group"
-          >
-            <Sparkles className="w-5 h-5 text-yellow-400 mx-auto mb-1 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-semibold text-slate-200 block">Submit Idea</span>
           </Link>
 
           <button
@@ -236,6 +174,44 @@ export const EDGEZENHub: React.FC = () => {
             <span className="text-xs font-semibold text-slate-200 block">Celebrate</span>
           </button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <section id="upcoming-events" className="glass-card rounded-2xl p-5 border border-emerald-500/30 space-y-3">
+          <h2 className="font-bold text-white">Upcoming Events</h2>
+          {upcomingUploadedEvents.length === 0 ? <p className="text-xs text-slate-500">No upcoming events yet.</p> : upcomingUploadedEvents.map(event => (
+            <div key={event.id} className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-2">
+              <img src={event.posterUrl} alt={`${event.eventName} poster`} className="w-full h-28 object-cover rounded-lg" />
+              <h3 className="text-sm font-bold text-white">{event.eventName}</h3>
+              <p className="text-xs text-emerald-400">{event.eventType} • {event.date}</p>
+              <a href={event.registrationLink} target="_blank" rel="noreferrer" className="text-xs text-cyan-400 hover:underline">Register for event</a>
+            </div>
+          ))}
+        </section>
+
+        <section id="completed-events" className="glass-card rounded-2xl p-5 border border-slate-700 space-y-3">
+          <h2 className="font-bold text-white">Completed Events</h2>
+          {completedEvents.length === 0 ? <p className="text-xs text-slate-500">No completed events yet.</p> : completedEvents.map(event => (
+            <div key={event.id} className="rounded-xl bg-slate-900 border border-slate-800 p-3">
+              <h3 className="text-sm font-bold text-white">{event.title}</h3>
+              <p className="text-xs text-slate-400 mt-1">{event.category} • {event.event_date}</p>
+            </div>
+          ))}
+        </section>
+
+        <section id="behind-the-stage" className="glass-card rounded-2xl p-5 border border-cyan-500/30 space-y-3">
+          <h2 className="font-bold text-white">Behind the Stage</h2>
+          {behindSceneEvents.length === 0 ? <p className="text-xs text-slate-500">No behind-the-stage updates yet.</p> : behindSceneEvents.map(event => (
+            <div key={event.id} className="rounded-xl bg-slate-900 border border-slate-800 p-3 space-y-2">
+              <img src={event.posterUrl} alt={`${event.eventName} poster`} className="w-full h-24 object-cover rounded-lg" />
+              <h3 className="text-sm font-bold text-white">{event.eventName}</h3>
+              <p className="text-xs text-cyan-400">{event.eventType} • {event.mode}</p>
+              <p className="text-xs text-slate-400">{event.description}</p>
+              <p className="text-xs text-slate-300"><strong>Team:</strong> {event.contributors}</p>
+              <p className="text-xs text-slate-400 italic">{event.thankYouNote}</p>
+            </div>
+          ))}
+        </section>
       </div>
 
       {/* 5. Main Widgets Grid (Upcoming Event & Live Contest) */}
@@ -341,43 +317,6 @@ export const EDGEZENHub: React.FC = () => {
             </button>
           </div>
         )}
-      </div>
-
-      {/* 6. Personal Analytics Chart (#21) */}
-      <div className="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-bold text-base text-slate-100 flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-cyan-400" />
-              <span>Personal Analytics & XP Growth Trend</span>
-            </h3>
-            <p className="text-xs text-slate-400">Monthly progress across weekly contests and events</p>
-          </div>
-          <Link to="/student/progress" className="text-xs text-cyan-400 hover:underline flex items-center space-x-1 font-semibold">
-            <span>Detailed Reports</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="h-64 w-full pt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={analyticsData}>
-              <defs>
-                <linearGradient id="colorXp" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0284c7" stopOpacity={0.8}/>
-                  <stop offset="95%" stopColor="#0284c7" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-              <XAxis dataKey="month" stroke="#64748b" fontSize={12} />
-              <YAxis stroke="#64748b" fontSize={12} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '12px', fontSize: '12px' }}
-              />
-              <Area type="monotone" dataKey="XP" stroke="#38bdf8" fillOpacity={1} fill="url(#colorXp)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
       </div>
 
       {/* QR Event Pass Modal */}
